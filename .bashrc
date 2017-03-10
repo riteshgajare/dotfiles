@@ -6,6 +6,25 @@ if [ -e /etc/bashrc ] ; then
   . /etc/bashrc
 fi
 
+export P4ROOT=/home/rgajare/p4
+export PATH=$P4ROOT/sw/misc/linux:$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$PATH
+export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
+export TOOLSDIR=$P4ROOT/sw/tools
+export NV_TOOLS=$P4ROOT/sw/tools
+export VERBOSE=1
+export LD_LIBRARY_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$LD_LIBRARY_PATH
+
+# Needed for CUFFT
+export LM_LICENSE_FILE=$P4ROOT/sw/gpgpu/cudalibTesting/license/cuda.lic
+
+export CUDA_INC_PATH=$P4ROOT/sw/gpgpu/cuda/import
+export CUDA_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/stub
+export NVCC=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvcc
+export NVRTC_INC_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/include
+# the next variable will have either .../lib or .../lib64 at the end, depending on your distro
+export NVRTC_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/lib64
+export PERENNIAL_ROOT=$P4ROOT/sw/compiler/test/gpgpu/perennial/ported/perennial/CCVS/testsrc
+
 ############################################################
 ## PATH
 ############################################################
@@ -25,6 +44,7 @@ conditionally_prefix_path /usr/local/heroku/bin
 conditionally_prefix_path /usr/texbin
 conditionally_prefix_path ~/bin
 conditionally_prefix_path ~/bin/private
+conditionally_prefix_path $P4ROOT/sw/misc/linux
 
 if [ `which rbenv 2> /dev/null` ]; then
   eval "$(rbenv init -)"
@@ -406,3 +426,5 @@ function install_llvm {
   echo "Remember to add $INSTALL_DIR/bin to your PATH variable."
   export PATH="$INSTALL_DIR/bin:$PATH"
 }
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

@@ -225,6 +225,7 @@ function ogg2mp3 {
 
 alias e="emacs -nw"
 alias eq="emacs -nw -Q"
+alias en="emacsclient -n"
 alias install_emacs='brew install emacs --srgb --with-cocoa'
 alias install_emacs_head='brew install emacs --HEAD --srgb --with-cocoa'
 alias link_emacs='ln -snf /usr/local/Cellar/emacs/24.5/bin/emacs /usr/local/bin/emacs && ln -snf /usr/local/Cellar/emacs/24.5/bin/emacsclient /usr/local/bin/emacsclient && brew linkapps emacs'
@@ -241,6 +242,7 @@ alias install_ffmpeg='brew install ffmpeg --with-libvorbis --with-theora --with-
 export GREP_COLOR="1;37;41"
 alias grep="grep --color=auto"
 alias wgeto="wget -q -O -"
+alias wgeta="wget --name=rgajare --password=Winters@1"
 alias sha1="openssl dgst -sha1"
 alias sha2="openssl dgst -sha256"
 alias sha512="openssl dgst -sha512"
@@ -284,3 +286,65 @@ function fakefile {
 }
 
 ############################################################
+
+alias vnc-server="sudo x11vnc -once -nopw -auth guess -display :0"
+alias whichgcc="sudo update-alternatives --config gcc"
+
+function dvs-compiler {
+ OPTIND=1
+ usage() { echo "Usage: $0 [-c <cl-number>] [-a <AMD64|aarch64|ARMv7>]" 1>&2; }
+ RELEASE=0
+ NUMARGS=$#
+ FILEPATH=http://dvstransfer.nvidia.com/dvsshare/dvs-binaries/
+ OS=Linux
+ ARCH=AMD64
+ r=false
+ t=false
+ while getopts ":c:a:r:t:" o; do
+   case "${o}" in
+     c)
+       c=${OPTARG}
+       ;;
+     a)
+       ARCH=${OPTARG}
+       ;;
+     r)
+       r=true
+       ;;
+     t)
+       t=true
+       ;;
+     *)
+       usage
+       ;;
+   esac
+ done
+
+ PWD=`pwd`
+ mkdir -p $c
+ FILENAME=gpu_drv_module_compiler_
+ cd $c
+ if $r ; then
+     FILENAME+="Release_${OS}_"
+ else
+     FILENAME+="Debug_${OS}_"
+ fi
+ FILENAME+="${ARCH}_GPGPU_COMPILER"
+ if $t ; then
+     echo "*** Getting the cudart from DVS ***"
+     FILENAME+="_cudart"
+ fi
+ FILEPATH+="${FILENAME}/SW_${c}.0_${FILENAME}.tgz"
+
+ echo "*** Downloading from $FILEPATH ***"
+ TMPFILE=`mktemp`
+ wget "$FILEPATH" -O $TMPFILE
+ #aria2c -x 8 "$FILEPATH" -o $TMPFILE --dir='\'
+ tar xvf $TMPFILE
+ for f in *.tar *.bz2 *.tgz
+ do
+   tar xvf $f
+   sudo rm -rf $f
+ done
+ sudo rm -rf $TMPFILE
+}
