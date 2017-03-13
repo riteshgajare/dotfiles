@@ -289,6 +289,7 @@ function fakefile {
 
 alias vnc-server="sudo x11vnc -once -nopw -auth guess -display :0"
 alias whichgcc="sudo update-alternatives --config gcc"
+alias p4-history="perl /home/rgajare/scripts/client_log.pl"
 
 function dvs-compiler {
  OPTIND=1
@@ -347,4 +348,322 @@ function dvs-compiler {
    sudo rm -rf $f
  done
  sudo rm -rf $TMPFILE
+}
+
+function cuda-utility {
+
+  # Fonts
+NORM=`tput sgr0`
+BOLD=`tput bold`
+REV=`tput smso`
+
+# Colours
+BLACK=$'\e[0;30m'
+BLUE=$'\e[0;34m'
+CYAN=$'\e[0;36m'
+PURPLE=$'\e[0;35m'
+LIGHT_GREEN=$'\e[1;32m'
+RED=$'\e[0;31m'
+BROWN=$'\e[0;33m'
+
+cudart=false
+cudalibtools=false
+nvvm=false
+tools=false
+jas=false
+cufft=false
+cublas=false
+curand=false
+cupti=false
+npp=false
+thrust=false
+math=false
+perennial=false
+modena=false
+misc_samples=false
+curand_samples=false
+clean=false
+
+USAGE () {
+    printf "${BOLD}Usage${NORM}: ./host_compiler_test.sh [options]
+${BOLD}Options:${NORM}
+\t${BOLD}--help${NORM}\t\t\t\tPrint this message
+\t${BOLD}--clean${NORM}\t\t\t\tRemove bin, built and depends directories from the toolkit path
+\t${BOLD}--standard${NORM}\t\t\tStandard host compiler tests specified in the test plan
+\t\t\t\t\tIncludes:
+\t\t\t\t\t\tCUDART
+\t\t\t\t\t\tCUDALIBTOOLS
+\t\t\t\t\t\tCUFFT
+\t\t\t\t\t\tCUBLAS
+\t\t\t\t\t\tCURAND
+\t\t\t\t\t\tThrust
+\t\t\t\t\t\tMath
+\t\t\t\t\t\tMISC. CUDA Samples
+\t\t\t\t\t\tCURAND CUDA Samples
+\t\t\t\t\t\tCUFFT CUDA Samples
+\t\t\t\t\t\tPerennial
+\t${BOLD}--cudart${NORM}\t\t\tBuild CUDART
+\t${BOLD}--cudalibtools${NORM}\t\t\tBuild CUDALIBTOOLS
+\t${BOLD}--nvvm${NORM}\t\t\t\tBuild NVVM
+\t${BOLD}--tools${NORM}\t\t\t\tBuild Tools
+\t${BOLD}--jas${NORM}\t\t\t\tBuild JAS
+\t${BOLD}--cufft${NORM}\t\t\t\tBuild CUFFT
+\t${BOLD}--cublas${NORM}\t\t\tBuild CUBLAS
+\t${BOLD}--curand${NORM}\t\t\tBuild CURAND
+\t${BOLD}--cupti${NORM}\t\t\t\tBuild CUPTI
+\t${BOLD}--npp${NORM}\t\t\t\tBuild NPP
+\t${BOLD}--thrust${NORM}\t\t\tBuild Thrust
+\t${BOLD}--misc_samples${NORM}\t\t\tBuild MISC. CUDA Samples
+\t${BOLD}--curand_samples${NORM}\t\tBuild CURAND CUDA Samples
+\t${BOLD}--math${NORM}\t\t\t\tBuild and execute CUDA Math tests
+\t${BOLD}--perennial${NORM}\t\t\tBuild and execute Perennial language specification tests
+\t${BOLD}--host_compiler${NORM} <path>\t\tSpecify a host compiler that will be used by Perennial
+\t${BOLD}--modena${NORM}\t\t\tBuild and execute Modena language specification tests
+\t${BOLD}--cufft_samples${NORM}\t\t\tBuild CUFFT CUDA Samples
+\t${BOLD}--branch${NORM} <path>\t\t\tCUDA toolkit branch (default: gpgpu)
+\t${BOLD}--host_arch${NORM} <arch>\t\tHost architecture (default: x86_64)
+\t${BOLD}--os${NORM} <os>\t\t\tHost Operating System (options: Linux | Darwin | Windows) (default: Linux)
+\t${BOLD}--export_compiler_to${NORM} <path>\tExport the compiler components to <path>
+\t${BOLD}--output_dir${NORM} <path>\t\tDirectory for log files and results (default: $PWD)
+\t${BOLD}--p4root${NORM} <path>\t\t\tP4ROOT path (optional); can be set through the environment variable
+\t${BOLD}--gpgpu_compiler_export${NORM} <path>\tGPGPU_COMPILER_EXPORT path (optional); can be set through the environment variable\n"
+}
+# Local variables
+branch=gpgpu
+script_dir=$PWD
+nvcc_extra_flags="-v -keep"
+make_extra_flags=""
+# Local variables continued
+tmp_root=$P4ROOT
+make=make
+
+
+host_arch=x86_64
+os=Linux
+perennial_os=$os
+
+while true; do
+    case $1 in
+  --help)
+      USAGE
+      return
+      ;;
+  --clean)
+      clean=true
+      shift
+      ;;
+  --cudart)
+      cudart=true
+      shift
+      ;;
+  --cudalibtools)
+      cudalibtools=true
+      shift
+      ;;
+  --nvvm)
+      nvvm=true
+      shift
+      ;;
+  --tools)
+      tools=true
+      shift
+      ;;
+  --jas)
+      jas=true
+      shift
+      ;;
+  --cufft)
+      cufft=true
+      shift
+      ;;
+  --cublas)
+      cublas=true
+      shift
+      ;;
+  --curand)
+      curand=true
+      shift
+      ;;
+  --cupti)
+      cupti=true
+      shift
+      ;;
+  --npp)
+      npp=true
+      shift
+      ;;
+  --thrust)
+      thrust=true
+      shift
+      ;;
+  --misc_samples)
+      misc_samples=true
+      shift
+      ;;
+  --curand_samples)
+      curand_samples=true
+      shift
+      ;;
+  --cufft_samples)
+      cufft_samples=true
+      shift
+      ;;
+  --math)
+      math=true
+      shift
+      ;;
+  --perennial)
+      perennial=true
+      shift
+      ;;
+  --host_compiler)
+      host_compiler=$2
+      shift 2
+      ;;
+  --modena)
+      modena=true
+      shift
+      ;;
+  --branch)
+      branch=$2
+      shift 2
+      ;;
+  --host_arch)
+      host_arch=$2
+      shift 2
+      ;;
+  --os)
+      os=$2
+      perennial_os=$2
+      shift 2
+      ;;
+  --output_dir)
+      script_dir=$2
+      shift 2
+      ;;
+  --standard)
+      cudart=true
+      cudalibtools=true
+      cufft=true
+      cublas=true
+      curand=true
+      thrust=true
+      misc_samples=true
+      curand_samples=true
+      cufft_samples=true
+      math=true
+      perennial=true
+      clean=true
+      shift
+      ;;
+  --p4root)
+      P4ROOT=$2
+      shift 2
+      ;;
+  --gpgpu_compiler_export)
+      GPGPU_COMPILER_EXPORT=$2
+      shift 2
+      ;;
+  --export_compiler_to)
+      export_compiler_to=$2
+      shift 2
+      ;;
+  *)
+      if [[ $1 != "" ]]; then
+          echo "${RED}ERROR: $1 illegal option detected${NORM}"
+      fi
+      shift
+      break
+      ;;
+    esac
+done
+
+if [[ -z ${P4ROOT} ]]; then
+    echo "${RED}ERROR: P4ROOT variable is not set.${NORM}"
+    exit 1
+fi
+echo ${BROWN}This is cuda-utility for host compiler testing...${NORM}
+echo "${BROWN}***************************************************${NORM}"
+echo "${BROWN}P4ROOT=${P4ROOT}${NORM}"
+echo "${BROWN}DRIVER_ROOT=${DRIVER_ROOT}${NORM}"
+echo "${BROWN}HOST_ARCH=${host_arch}${NORM}"
+echo "${BROWN}OS=${os}${NORM}"
+echo "${BROWN}${NORM}"
+echo "${BROWN}***************************************************${NORM}"
+
+
+# General environment variables
+export BUILDROOT=$tmp_root/sw/$branch
+
+if [ -z $DRIVER_ROOT ]; then
+    export DRIVER_ROOT=$tmp_root/sw/dev/gpu_drv/module_compiler
+fi
+export TOOLSDIR=$tmp_root/sw/tools
+export VERBOSE=1
+if [[ $os == "Linux" ]]; then
+    perennial_os="linux"
+    export LD_LIBRARY_PATH=$BUILDROOT/bin/${host_arch}_Linux_release
+fi
+
+if [[ $os == "Windows" ]]; then
+    perennial_os="windows"
+fi
+
+if [[ $os == "Darwin" ]]; then
+    perennial_os="darwin"
+    export DYLD_LIBRARY_PATH=$BUILDROOT/bin/${host_arch}_Darwin_release
+    make=make
+fi
+
+if [[ $clean == true ]]; then
+    echo Removing the previous build files. Requires sudo!
+    sudo rm -rf $BUILDROOT/bin/*
+    sudo rm -rf $BUILDROOT/built/*
+    sudo rm -rf $BUILDROOT/depends/*
+fi
+
+if [[ $nvvm == true ]]; then
+    tmp_path=$PATH
+    export PATH=$tmp_root/sw/misc/linux:$PATH
+    cd $tmp_root/sw/dev/gpu_drv/module_compiler/drivers/compiler
+    if [[ $clean == true ]]; then
+        echo "${RED}Attempting to clean previous build. Clobber!${NORM}"
+        sudo $make RELEASE=1 clean
+        echo ""
+        echo Everything looks sane.
+    else
+      echo Performing incremental build.
+    fi
+    echo "${PURPLE}*** Starting the build for NVVM ***${NORM}"
+    echo Please wait...
+    sudo $make nvvm_install RELEASE=1 PARALLEL_NVVM_BUILD= GPGPU_COMPILER_EXPORT_DIR=$BUILDROOT/bin > $script_dir/build_nvvm.log 2>&1
+    #chown -R tester:tester $BUILDROOT/bin/${host_arch}_${os}_release
+    if [ -z `grep -Irine "&&&& Installing nvvm` ]; then
+        echo Everything is sane.
+    fi
+    export PATH=$tmp_path
+fi
+
+# Tools
+if [[ $tools == true ]]; then
+    cd $tmp_root/sw/dev/gpu_drv/module_compiler/drivers/compiler
+    if [[ $clean == true ]]; then
+        echo "${RED}Attempting to clean previous build. Clobber!${NORM}"
+        sudo rm -rf built/*
+        echo ${GREEN}Everything looks sane.${NORM}
+    else
+      echo Performing incremental build.
+    fi
+    echo "${PURPLE}*** Starting the build for Tools ***${NORM}"
+    echo Please wait...
+    sudo $make $make_extra_flags tools_install RELEASE=1 -j12 GPGPU_COMPILER_EXPORT_DIR=$BUILDROOT/bin > $script_dir/build_tools.log 2>&1
+fi
+
+
+## Do clean up after messing your env variables
+echo Restoring the env variables.
+unset BUILDROOT
+cd $script_dir
+echo ${GREEN}Everything looks sane.${NORM}
+
 }
