@@ -292,8 +292,8 @@ alias whichgcc="sudo update-alternatives --config gcc"
 alias p4-history="perl /home/rgajare/scripts/client_log.pl"
 
 function dvs-compiler {
- OPTIND=1
- usage() { echo "Usage: $0 [-c <cl-number>] [-a <AMD64|aarch64|ARMv7>]" 1>&2; }
+
+ usage() { echo "Usage: dvs-compiler [-c <cl-number>] [-a <AMD64|aarch64|ARMv7>] -t" 1>&2; }
  RELEASE=0
  NUMARGS=$#
  FILEPATH=http://dvstransfer.nvidia.com/dvsshare/dvs-binaries/
@@ -301,22 +301,24 @@ function dvs-compiler {
  ARCH=AMD64
  r=false
  t=false
- while getopts ":c:a:r:t:" o; do
-   case "${o}" in
-     c)
-       c=${OPTARG}
+
+ while true; do
+   case $1 in
+     -h|--help)
+       usage
+       return
        ;;
-     a)
-       ARCH=${OPTARG}
+     -c|--changelist)
+       c=$2
+       shift 2
        ;;
-     r)
-       r=true
-       ;;
-     t)
+     -t|--cudart)
        t=true
+       shift
        ;;
      *)
-       usage
+       shift
+       break
        ;;
    esac
  done
@@ -342,12 +344,15 @@ function dvs-compiler {
  wget "$FILEPATH" -O $TMPFILE
  #aria2c -x 8 "$FILEPATH" -o $TMPFILE --dir='\'
  tar xvf $TMPFILE
+ echo Extracting the compiler
+ echo Please wait...
  for f in *.tar *.bz2 *.tgz
  do
    tar xvf $f
    sudo rm -rf $f
  done
  sudo rm -rf $TMPFILE
+ echo Everything looks sane.
 }
 
 function cuda-utility {

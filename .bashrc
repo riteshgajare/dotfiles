@@ -7,23 +7,23 @@ if [ -e /etc/bashrc ] ; then
 fi
 
 export P4ROOT=/home/rgajare/p4
-export PATH=$P4ROOT/sw/misc/linux:$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$PATH
-export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
+#export PATH=$P4ROOT/sw/misc/linux:$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$PATH
+# export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
 export TOOLSDIR=$P4ROOT/sw/tools
 export NV_TOOLS=$P4ROOT/sw/tools
 export VERBOSE=1
-export LD_LIBRARY_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$LD_LIBRARY_PATH
 
 # Needed for CUFFT
 export LM_LICENSE_FILE=$P4ROOT/sw/gpgpu/cudalibTesting/license/cuda.lic
 
-export CUDA_INC_PATH=$P4ROOT/sw/gpgpu/cuda/import
-export CUDA_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/stub
-export NVCC=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvcc
-export NVRTC_INC_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/include
-# the next variable will have either .../lib or .../lib64 at the end, depending on your distro
-export NVRTC_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/lib64
-export PERENNIAL_ROOT=$P4ROOT/sw/compiler/test/gpgpu/perennial/ported/perennial/CCVS/testsrc
+# export CUDA_INC_PATH=$P4ROOT/sw/gpgpu/cuda/import
+# export CUDA_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/stub
+# export NVCC=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvcc
+# export NVRTC_INC_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/include
+# # the next variable will have either .../lib or .../lib64 at the end, depending on your distro
+# export NVRTC_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/lib64
+# export PERENNIAL_ROOT=$P4ROOT/sw/compiler/test/gpgpu/perennial/ported/perennial/CCVS/testsrc
 
 ############################################################
 ## PATH
