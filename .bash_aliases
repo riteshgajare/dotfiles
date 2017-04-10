@@ -11,7 +11,6 @@ add-alias ()
 ############################################################
 ## Bash
 ############################################################
-
 alias cd..="cd .."
 alias ..="cd .."
 alias ...="cd ../../"
@@ -26,6 +25,9 @@ alias c="clear"
 alias path='echo -e ${PATH//:/\\n}'
 alias ax="chmod a+x"
 
+noout() {
+    "$@" >/dev/null 2>&1 &
+}
 ############################################################
 ## List
 ############################################################
@@ -242,7 +244,7 @@ alias install_ffmpeg='brew install ffmpeg --with-libvorbis --with-theora --with-
 export GREP_COLOR="1;37;41"
 alias grep="grep --color=auto"
 alias wgeto="wget -q -O -"
-alias wgeta="wget --name=rgajare --password=Winters@1"
+alias wgeta="wget --user=rgajare --password=Winters@1"
 alias sha1="openssl dgst -sha1"
 alias sha2="openssl dgst -sha256"
 alias sha512="openssl dgst -sha512"
@@ -287,9 +289,21 @@ function fakefile {
 
 ############################################################
 
-alias vnc-server="sudo x11vnc -once -nopw -auth guess -display :0"
+alias vnc-server="sudo x11vnc -nopw -auth guess -display :0"
 alias whichgcc="sudo update-alternatives --config gcc"
 alias p4-history="perl /home/rgajare/scripts/client_log.pl"
+
+function extract {
+ tar xvf $1
+ echo Extracting the compiler
+ echo Please wait...
+ rm -rf $1
+ for f in *.tar *.bz2 *.tgz
+ do
+   tar xvf $f
+   sudo rm -rf $f
+ done
+}
 
 function dvs-compiler {
 
@@ -315,6 +329,10 @@ function dvs-compiler {
      -t|--cudart)
        t=true
        shift
+       ;;
+     -a|--arch)
+       ARCH=$2
+       shift 2
        ;;
      *)
        shift
@@ -343,15 +361,7 @@ function dvs-compiler {
  TMPFILE=`mktemp`
  wget "$FILEPATH" -O $TMPFILE
  #aria2c -x 8 "$FILEPATH" -o $TMPFILE --dir='\'
- tar xvf $TMPFILE
- echo Extracting the compiler
- echo Please wait...
- for f in *.tar *.bz2 *.tgz
- do
-   tar xvf $f
-   sudo rm -rf $f
- done
- sudo rm -rf $TMPFILE
+ extract $TMPFILE
  echo Everything looks sane.
 }
 
@@ -441,112 +451,111 @@ make_extra_flags=""
 # Local variables continued
 tmp_root=$P4ROOT
 make=make
-
-
-host_arch=x86_64
+TARGET_OS=Linux
+HOST_ARCH=x86_64
 os=Linux
 perennial_os=$os
-
+sudo echo "Welcome to CUDA Utility for Host compiler testing!!"
 while true; do
-    case $1 in
-  --help)
+  case $1 in
+    --help)
       USAGE
       return
       ;;
-  --clean)
+    --clean)
       clean=true
       shift
       ;;
-  --cudart)
+    --cudart)
       cudart=true
       shift
       ;;
-  --cudalibtools)
+    --cudalibtools)
       cudalibtools=true
       shift
       ;;
-  --nvvm)
+    --nvvm)
       nvvm=true
       shift
       ;;
-  --tools)
+    --tools)
       tools=true
       shift
       ;;
-  --jas)
+    --jas)
       jas=true
       shift
       ;;
-  --cufft)
+    --cufft)
       cufft=true
       shift
       ;;
-  --cublas)
+    --cublas)
       cublas=true
       shift
       ;;
-  --curand)
+    --curand)
       curand=true
       shift
       ;;
-  --cupti)
+    --cupti)
       cupti=true
       shift
       ;;
-  --npp)
+    --npp)
       npp=true
       shift
       ;;
-  --thrust)
+    --thrust)
       thrust=true
       shift
       ;;
-  --misc_samples)
+    --misc_samples)
       misc_samples=true
       shift
       ;;
-  --curand_samples)
+    --curand_samples)
       curand_samples=true
       shift
       ;;
-  --cufft_samples)
+    --cufft_samples)
       cufft_samples=true
       shift
       ;;
-  --math)
+    --math)
       math=true
       shift
       ;;
-  --perennial)
+    --perennial)
       perennial=true
       shift
       ;;
-  --host_compiler)
+    --host_compiler)
       host_compiler=$2
       shift 2
       ;;
-  --modena)
+    --modena)
       modena=true
       shift
       ;;
-  --branch)
+    --branch)
       branch=$2
       shift 2
       ;;
-  --host_arch)
-      host_arch=$2
+    --host_arch)
+      HOST_ARCH=$2
       shift 2
       ;;
-  --os)
+    --os)
       os=$2
       perennial_os=$2
       shift 2
       ;;
-  --output_dir)
+    --output_dir)
       script_dir=$2
       shift 2
       ;;
-  --standard)
+    --standard)
       cudart=true
       cudalibtools=true
       cufft=true
@@ -561,62 +570,84 @@ while true; do
       clean=true
       shift
       ;;
-  --p4root)
+    --p4root)
       P4ROOT=$2
       shift 2
       ;;
-  --gpgpu_compiler_export)
+    --gpgpu_compiler_export)
       GPGPU_COMPILER_EXPORT=$2
       shift 2
       ;;
-  --export_compiler_to)
+    -target-arch)
+      TARGET_ARCH=$2
+      shift 2
+      ;;
+    -target-os)
+      TARGET_OS=$2
+      shift 2
+      ;;
+    -branch)
+      BRANCH=$2
+      shift 2
+      ;;
+    --export_compiler_to)
       export_compiler_to=$2
       shift 2
       ;;
-  *)
+    *)
       if [[ $1 != "" ]]; then
           echo "${RED}ERROR: $1 illegal option detected${NORM}"
       fi
       shift
       break
       ;;
-    esac
+  esac
 done
+
+if [[ -z ${TARGET_ARCH} ]]; then
+    TARGET_ARCH=$HOST_ARCH
+fi
+
+if [[ -z ${BRANCH} ]]; then
+    BRANCH=module_compiler
+fi
 
 if [[ -z ${P4ROOT} ]]; then
     echo "${RED}ERROR: P4ROOT variable is not set.${NORM}"
     exit 1
 fi
 echo ${BROWN}This is cuda-utility for host compiler testing...${NORM}
-echo "${BROWN}***************************************************${NORM}"
-echo "${BROWN}P4ROOT=${P4ROOT}${NORM}"
-echo "${BROWN}DRIVER_ROOT=${DRIVER_ROOT}${NORM}"
-echo "${BROWN}HOST_ARCH=${host_arch}${NORM}"
-echo "${BROWN}OS=${os}${NORM}"
-echo "${BROWN}${NORM}"
-echo "${BROWN}***************************************************${NORM}"
-
+echo "***************************************************"
+echo "P4ROOT=${P4ROOT}"
+echo "DRIVER_ROOT=${DRIVER_ROOT}"
+echo "HOST_ARCH=${HOST_ARCH}"
+echo "OS=${os}"
+echo "TARGET_ARCH=${TARGET_ARCH}"
+echo "NV_TOOLS=${P4ROOT}/sw/tools"
+echo "***************************************************"
 
 # General environment variables
 export BUILDROOT=$tmp_root/sw/$branch
 
 if [ -z $DRIVER_ROOT ]; then
-    export DRIVER_ROOT=$tmp_root/sw/dev/gpu_drv/module_compiler
+    export DRIVER_ROOT=$tmp_root/sw/dev/gpu_drv/${BRANCH}
 fi
 export TOOLSDIR=$tmp_root/sw/tools
 export VERBOSE=1
 if [[ $os == "Linux" ]]; then
     perennial_os="linux"
-    export LD_LIBRARY_PATH=$BUILDROOT/bin/${host_arch}_Linux_release
+    export LD_LIBRARY_PATH=$BUILDROOT/bin/${HOST_ARCH}_Linux_release
 fi
 
 if [[ $os == "Windows" ]]; then
     perennial_os="windows"
 fi
 
+NUMPROCS=`grep processor /proc/cpuinfo | wc -l`
+
 if [[ $os == "Darwin" ]]; then
     perennial_os="darwin"
-    export DYLD_LIBRARY_PATH=$BUILDROOT/bin/${host_arch}_Darwin_release
+    export DYLD_LIBRARY_PATH=$BUILDROOT/bin/${HOST_ARCH}_Darwin_release
     make=make
 fi
 
@@ -630,10 +661,10 @@ fi
 if [[ $nvvm == true ]]; then
     tmp_path=$PATH
     export PATH=$tmp_root/sw/misc/linux:$PATH
-    cd $tmp_root/sw/dev/gpu_drv/module_compiler/drivers/compiler
+    cd $tmp_root/sw/dev/gpu_drv/${BRANCH}/drivers/compiler
     if [[ $clean == true ]]; then
         echo "${RED}Attempting to clean previous build. Clobber!${NORM}"
-        sudo $make RELEASE=1 clean
+        sudo $make RELEASE=1 clean > $script_dir/build_nvvm.log 2>&1
         echo ""
         echo Everything looks sane.
     else
@@ -641,7 +672,9 @@ if [[ $nvvm == true ]]; then
     fi
     echo "${PURPLE}*** Starting the build for NVVM ***${NORM}"
     echo Please wait...
-    sudo $make nvvm_install RELEASE=1 PARALLEL_NVVM_BUILD= GPGPU_COMPILER_EXPORT_DIR=$BUILDROOT/bin > $script_dir/build_nvvm.log 2>&1
+    set -x
+    sudo $make nvvm_install RELEASE=1 PARALLEL_NVVM_BUILD=$NUMPROCS GPGPU_COMPILER_EXPORT_DIR=$BUILDROOT/bin > $script_dir/build_nvvm.log 2>&1
+    set +x
     #chown -R tester:tester $BUILDROOT/bin/${host_arch}_${os}_release
     if [ -z `grep -Irine "&&&& Installing nvvm` ]; then
         echo Everything is sane.
@@ -651,7 +684,7 @@ fi
 
 # Tools
 if [[ $tools == true ]]; then
-    cd $tmp_root/sw/dev/gpu_drv/module_compiler/drivers/compiler
+    cd $tmp_root/sw/dev/gpu_drv/${BRANCH}/drivers/compiler
     if [[ $clean == true ]]; then
         echo "${RED}Attempting to clean previous build. Clobber!${NORM}"
         sudo rm -rf built/*
@@ -661,9 +694,49 @@ if [[ $tools == true ]]; then
     fi
     echo "${PURPLE}*** Starting the build for Tools ***${NORM}"
     echo Please wait...
-    sudo $make $make_extra_flags tools_install RELEASE=1 -j12 GPGPU_COMPILER_EXPORT_DIR=$BUILDROOT/bin > $script_dir/build_tools.log 2>&1
+    set -x
+    sudo $make $make_extra_flags tools_install RELEASE=1 -j$NUMPROCS GPGPU_COMPILER_EXPORT_DIR=$BUILDROOT/bin > $script_dir/build_tools.log 2>&1
+    set +x
 fi
 
+if [[ $jas == true ]]; then
+    cd $tmp_root/sw/dev/gpu_drv/${BRANCH}/drivers/compiler
+    echo "${PURPLE}*** Starting the build for Jas ***${NORM}"
+    echo Please wait...
+    set -x
+    sudo $make $make_extra_flags jas_install RELEASE=1 -j$NUMPROCS GPGPU_COMPILER_EXPORT_DIR=$BUILDROOT/bin > $script_dir/build_jas.log 2>&1
+    set +x
+fi
+
+if [[ $TARGET_OS == "QNX" ]]; then
+    QNX_HOST=$P4ROOT/sw/tools/embedded/qnx/qnx700-eval/host/linux/x86_64
+    QNX_TARGET=$P4ROOT/sw/tools/embedded/qnx/qnx700-eval/target/qnx7
+    echo QNX Target detected! Continuing with the following configuration -
+    echo QNX_HOST=$QNX_HOST
+    echo QNX_TARGET=$QNX_TARGET
+    if [[ -z $TARGET_ARCH ]]; then
+        TARGET_ARCH=aarch64
+    fi
+    echo TARGET_ARCH=$TARGET_ARCH
+fi
+
+GPGPU_COMPILER_EXPORT=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release
+
+if [[ $cudart == true ]]; then
+    echo "${PURPLE}Starting the build for Cuda Libs {CUDART}${NORM}"
+    set -x
+    cd $P4ROOT/sw/gpgpu/cuda
+    sudo $make TARGET_ARCH=${TARGET_ARCH} TARGET_OS=${TARGET_OS} -j$NUMPROCS RELEASE=1 clean GPGPU_COMPILER_EXPORT=$GPGPU_COMPILER_EXPORT > $script_dir/build_cuda.log 2>&1
+    sudo $make $make_extra_flags TARGET_ARCH=${TARGET_ARCH} TARGET_OS=${TARGET_OS} -j$NUMPROCS RELEASE=1 GPGPU_COMPILER_EXPORT=$GPGPU_COMPILER_EXPORT QNX_HOST=${QNX_HOST} QNX_TARGET=${QNX_TARGET} DRIVER_ROOT=${DRIVER_ROOT} >> $script_dir/build_cuda.log 2>&1
+    cd ..
+    tar -chzf cudart.tgz --exclude 'build/scripts/testing/*' build bin cuda/import/*.h* cuda/tools/cudart/*.h* cuda/tools/cudart/nvfunctional cuda/tools/cnprt/*.h* cuda/common/*.h*
+    find built/ -name "*.ptx" | xargs tar rvf built_ptx.tar
+    bzip2 -z built_ptx.tar
+    mv cudart.tgz $script_dir
+    mv built_ptx.tar $script_dir
+    set +x
+    echo Everything looks sane.
+fi
 
 ## Do clean up after messing your env variables
 echo Restoring the env variables.
@@ -672,3 +745,50 @@ cd $script_dir
 echo ${GREEN}Everything looks sane.${NORM}
 
 }
+
+alias p4sw='cd /home/rgajare/p4/sw'
+alias find-name='find . -name "$1"'
+alias less='less -N'
+
+function vulcan-cuda {
+  rev=$1
+  if [[ -z $rev ]]; then
+    rev=tot
+  fi
+  set -x
+  vulcan --eris --install --target-revision==cl-$rev compiler_internal_base
+  echo This is what would be the output
+  echo $?
+  vulcan --install ]=cuda
+  set +x
+}
+
+############################################################
+## Perforce
+############################################################
+
+function install_p4 {
+ sudo su
+ touch  /etc/apt/sources.list.d/perforce.list && echo 'deb http://package.perforce.com/apt/ubuntu/ trusty release' >>  /etc/apt/sources.list.d/perforce.list
+ wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -
+ apt-get update && sudo apt-get install helix-p4d -y
+ exit
+}
+
+alias p4d="p4 describe"
+alias p4s="p4 sync"
+alias p4f="p4 filelog -L"
+alias p4top="p4 changes -t -m1 #have"
+alias mychanges='p4 changes -u rgajare -s pending'
+alias p4review='/home/rgajare/p4/sw/main/apps/p4review/p4review.pl'
+alias p4rmerge='/home/rgajare/p4/sw/main/apps/p4review/p4rmerge.pl'
+alias dvsbuild='~/p4/sw/automation/dvs/dvsbuild/dvsbuild.pl -web'
+alias p4revert='perl /home/rgajare/p4/sw/tools/scripts/p4revert.pl'
+
+function client_log {
+  if [[ -n $1 ]];
+  then p4 filelog //sw_spec/client/$1
+  else echo "Usage: client_log <client-name>"
+  fi
+}
+alias vless='vim -u ~/.less.vim'
