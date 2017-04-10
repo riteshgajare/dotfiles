@@ -13,10 +13,11 @@ export TOOLSDIR=$P4ROOT/sw/tools
 export NV_TOOLS=$P4ROOT/sw/tools
 export VERBOSE=1
 # export LD_LIBRARY_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$LD_LIBRARY_PATH
-
+export VVS_P4CLIENT=rgajare-dev
+export VVS_P4SERVER=p4sw:2006
 # Needed for CUFFT
 export LM_LICENSE_FILE=$P4ROOT/sw/gpgpu/cudalibTesting/license/cuda.lic
-
+export VULCAN_CONFIG=.vcnf
 # export CUDA_INC_PATH=$P4ROOT/sw/gpgpu/cuda/import
 # export CUDA_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/stub
 # export NVCC=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvcc
@@ -24,6 +25,8 @@ export LM_LICENSE_FILE=$P4ROOT/sw/gpgpu/cudalibTesting/license/cuda.lic
 # # the next variable will have either .../lib or .../lib64 at the end, depending on your distro
 # export NVRTC_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/lib64
 # export PERENNIAL_ROOT=$P4ROOT/sw/compiler/test/gpgpu/perennial/ported/perennial/CCVS/testsrc
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 ############################################################
 ## PATH
@@ -36,21 +39,21 @@ function conditionally_prefix_path {
   fi
 }
 
+PATH=.:./bin:${PATH}
+
 conditionally_prefix_path /usr/local/bin
 conditionally_prefix_path /usr/local/sbin
 conditionally_prefix_path /usr/local/share/npm/bin
-conditionally_prefix_path /usr/local/mysql/bin
-conditionally_prefix_path /usr/local/heroku/bin
 conditionally_prefix_path /usr/texbin
 conditionally_prefix_path ~/bin
 conditionally_prefix_path ~/bin/private
 conditionally_prefix_path $P4ROOT/sw/misc/linux
+conditionally_prefix_path /home/rgajare/p4/sw/eris/bin
+conditionally_prefix_path /home/rgajare/llvm/install/bin
 
 if [ `which rbenv 2> /dev/null` ]; then
   eval "$(rbenv init -)"
 fi
-
-PATH=.:./bin:${PATH}
 
 ############################################################
 ## MANPATH
@@ -427,4 +430,6 @@ function install_llvm {
   export PATH="$INSTALL_DIR/bin:$PATH"
 }
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
+export LESS=' -R '
