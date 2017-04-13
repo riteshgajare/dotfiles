@@ -288,6 +288,8 @@ function fakefile {
 }
 
 ############################################################
+# Utility functions
+############################################################
 
 alias vnc-server="sudo x11vnc -nopw -auth guess -display :0"
 alias whichgcc="sudo update-alternatives --config gcc"
@@ -304,6 +306,31 @@ function extract {
    sudo rm -rf $f
  done
 }
+
+
+function inquire ()  {
+  echo  -n "$@ [y/n]? "
+  read answer
+  finish="-1"
+  while [ "$finish" = '-1' ]
+  do
+    finish="1"
+    if [ "$answer" = '' ];
+    then
+      answer=""
+    else
+      case $answer in
+        y | Y | yes | YES ) answer="y";;
+        n | N | no | NO ) answer="n";;
+        *) finish="-1";
+           echo -n 'Invalid response -- please reenter:';
+           read answer;;
+       esac
+    fi
+  done
+}
+
+
 
 function dvs-compiler {
 
@@ -784,6 +811,18 @@ alias p4review='/home/rgajare/p4/sw/main/apps/p4review/p4review.pl'
 alias p4rmerge='/home/rgajare/p4/sw/main/apps/p4review/p4rmerge.pl'
 alias dvsbuild='~/p4/sw/automation/dvs/dvsbuild/dvsbuild.pl -web'
 alias p4revert='perl /home/rgajare/p4/sw/tools/scripts/p4revert.pl'
+
+function p4clean {
+ find . -type f | p4 -x - fstat 2>&1 > /dev/null | sed 's/ -.*$//' > /tmp/list
+ less /tmp/list
+ inquire "Do you want to continue deleting the files?"
+ if [[ $answer == "y" ]]; then
+   xargs rm < /tmp/list
+   #Remove the empty directories if any
+   find -depth -type d -empty -exec rmdir {} \;
+ fi
+ rm -rf /tmp/list
+}
 
 function client_log {
   if [[ -n $1 ]];
