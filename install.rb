@@ -1,4 +1,4 @@
-!/usr/bin/env ruby
+#!/usr/bin/env ruby
 
 # Inspired by http://errtheblog.com/posts/89-huba-huba
 
