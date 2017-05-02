@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+!/usr/bin/env ruby
 
 # Inspired by http://errtheblog.com/posts/89-huba-huba
 
@@ -9,7 +9,8 @@
 home = File.expand_path('~/')
 
 Dir['.*'].each do |file|
-  next if file =~ /.git/ || file =~ /../
+  next if file == ".git" || file == ".." || file == "."
   target = File.join(home, "#{file}")
-  `ln -ns #{File.expand_path file} #{target}`
+  `ln -nsf #{File.expand_path file} #{target}`
 end
+
