@@ -50,7 +50,7 @@ conditionally_prefix_path ~/bin/private
 conditionally_prefix_path $P4ROOT/sw/misc/linux
 conditionally_prefix_path /home/rgajare/p4/sw/eris/bin
 conditionally_prefix_path /home/rgajare/llvm/install/bin
-
+conditionally_prefix_path /home/rgajare/p4/sw/tools/VRL
 if [ `which rbenv 2> /dev/null` ]; then
   eval "$(rbenv init -)"
 fi
@@ -80,10 +80,21 @@ function conditionally_prefix_cdpath {
   fi
 }
 
-conditionally_prefix_cdpath ~/work
+conditionally_prefix_cdpath ~/p4
 conditionally_prefix_cdpath ~/work/oss
 
 CDPATH=.:${CDPATH}
+
+############################################################
+## Other paths
+############################################################
+
+function conditionally_prefix_ldpath {
+  local dir=$1
+  if [ -d $dir ]; then
+    LD_LIBRARY_PATH="$dir:${LD_LIBRARY_PATH}"
+  fi
+}
 
 # Set INFOPATH so it includes users' private info if it exists
 # if [ -d ~/info ]; then
@@ -433,3 +444,9 @@ function install_llvm {
 
 export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
 export LESS=' -R '
+
+PATH="/home/rgajare/perl5/bin${PATH:+:${PATH}}"; export PATH;
+PERL5LIB="/home/rgajare/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
+PERL_LOCAL_LIB_ROOT="/home/rgajare/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
+PERL_MB_OPT="--install_base \"/home/rgajare/perl5\""; export PERL_MB_OPT;
+PERL_MM_OPT="INSTALL_BASE=/home/rgajare/perl5"; export PERL_MM_OPT;
