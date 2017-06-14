@@ -6,7 +6,9 @@ if [ -e /etc/bashrc ] ; then
   . /etc/bashrc
 fi
 
-export P4ROOT=/home/rgajare/p4
+export P4ROOT=~/p4
+export P4PORT=p4sw:2006
+export P4USER=rgajare
 #export PATH=$P4ROOT/sw/misc/linux:$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$PATH
 # export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
 export TOOLSDIR=$P4ROOT/sw/tools
