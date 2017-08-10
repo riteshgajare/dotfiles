@@ -6,7 +6,7 @@ if [ -e /etc/bashrc ] ; then
   . /etc/bashrc
 fi
 
-export P4ROOT=~/p4
+export P4ROOT=~/
 export P4PORT=p4sw:2006
 export P4USER=rgajare
 #export PATH=$P4ROOT/sw/misc/linux:$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$PATH
@@ -50,9 +50,10 @@ conditionally_prefix_path /usr/texbin
 conditionally_prefix_path ~/bin
 conditionally_prefix_path ~/bin/private
 conditionally_prefix_path $P4ROOT/sw/misc/linux
-conditionally_prefix_path /home/rgajare/p4/sw/eris/bin
+conditionally_prefix_path $P4ROOT/sw/eris/bin
 conditionally_prefix_path /home/rgajare/llvm/install/bin
-conditionally_prefix_path /home/rgajare/p4/sw/tools/VRL
+conditionally_prefix_path $P4ROOT/tools/VRL
+
 if [ `which rbenv 2> /dev/null` ]; then
   eval "$(rbenv init -)"
 fi
