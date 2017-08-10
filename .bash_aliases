@@ -1177,3 +1177,38 @@ fi
 function p4dc {
    p4 opened -c $1 | awk 'BEGIN { FS = "#" } // { print "p4 diff " $1 }' | csh | less
 }
+
+function install_driver {
+  usage() { echo "Usage: install-driver [-c <cl-number>] -r" 1>&2; }
+  cl=""
+  unset COMPILER_DIR
+  r=false
+  ARCH_OS_MO=x86_64_Linux_debug/
+  while true; do
+    case $1 in
+      -h|--help)
+        usage
+        return
+        ;;
+      -r|--release)
+        r=true
+        ARCH_OS_MO=x86_64_Linux_release/
+        shift
+        ;;
+      -c|--changelist)
+        cl=$2
+        shift 2
+        ;;
+      *)
+        shift
+        break
+        ;;
+    esac
+  done
+  if [ -d /mnt/compilershare/compiler ]; then
+    OLD_PATH=$PATH
+    WORK_DIR=~/compiler
+    export TEST_ROOT=$P4ROOT/sw/gpgpu
+    export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
+  fi
+}
