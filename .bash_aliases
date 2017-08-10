@@ -973,6 +973,12 @@ function build_cudart {
           export PATH=$PATH:$COMPILER_DIR/nvvm/bin
           export PATH=$P4ROOT/sw/tools/unix/hosts/Linux-x86/doxygen-1.5.8:$PATH
           echo "Compiling CUDA runtime & Library tools for ${cl} ..."
+	  p4 sync //sw/gpgpu/cuda/...@${cl}
+	  p4 sync //sw/gpgpu/build/...@${cl}
+	  p4 sync //sw/gpgpu/cudalibTesting/...@${cl}
+	  p4 sync //sw/gpgpu/*.mk@${cl}
+	  p4 sync //sw/gpgpu/Makefile@${cl}
+	  p4 sync //sw/gpgpu/cudalibtools/...@${cl}
           cd ${TEST_ROOT}
           rm -rf bin built depends
           if $r; then
@@ -1020,7 +1026,7 @@ function findinitiator {
 }
 
 function wgeta {
-  wget --user=rgajare --password=Winters@1 $1 -O $2
+  wget --user=rgajare --password=Winters@2 $1 -O $2
 }
 
 function run_test {

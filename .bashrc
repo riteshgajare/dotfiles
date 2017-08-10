@@ -6,11 +6,9 @@ if [ -e /etc/bashrc ] ; then
   . /etc/bashrc
 fi
 
-export P4ROOT=~/
+export P4ROOT=$(p4 client -o | grep '^Root:' | awk -F ' ' '{print $NF}')
 export P4PORT=p4sw:2006
 export P4USER=rgajare
-#export PATH=$P4ROOT/sw/misc/linux:$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$PATH
-# export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
 export TOOLSDIR=$P4ROOT/sw/tools
 export NV_TOOLS=$P4ROOT/sw/tools
 export VERBOSE=1
@@ -20,13 +18,6 @@ export VVS_P4SERVER=p4sw:2006
 # Needed for CUFFT
 export LM_LICENSE_FILE=$P4ROOT/sw/gpgpu/cudalibTesting/license/cuda.lic
 export VULCAN_CONFIG=.vcnf
-# export CUDA_INC_PATH=$P4ROOT/sw/gpgpu/cuda/import
-# export CUDA_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/stub
-# export NVCC=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvcc
-# export NVRTC_INC_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/include
-# # the next variable will have either .../lib or .../lib64 at the end, depending on your distro
-# export NVRTC_LIB_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release/nvrtc/lib64
-# export PERENNIAL_ROOT=$P4ROOT/sw/compiler/test/gpgpu/perennial/ported/perennial/CCVS/testsrc
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
