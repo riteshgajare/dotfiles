@@ -1,0 +1,351 @@
+function p4dc {
+   p4 opened -c $1 | awk 'BEGIN { FS = "#" } // { print "p4 diff " $1 }' | csh | less
+}
+
+function dvs-compiler {
+
+ usage() { echo "Usage: dvs-compiler [-c <cl-number>] [-a <AMD64|aarch64|ARMv7>] -t" 1>&2; }
+ RELEASE=0
+ NUMARGS=$#
+ FILEPATH=http://dvstransfer.nvidia.com/dvsshare/dvs-binaries/
+ OS=Linux
+ ARCH=AMD64
+ r=false
+ t=false
+
+ while true; do
+   case $1 in
+     -h|--help)
+       usage
+       return
+       ;;
+     -r|--release)
+       r=true
+       shift
+       ;;
+     -c|--changelist)
+       c=$2
+       shift 2
+       ;;
+     -t|--cudart)
+       t=true
+       shift
+       ;;
+     -a|--arch)
+       ARCH=$2
+       shift 2
+       ;;
+     *)
+       shift
+       break
+       ;;
+   esac
+ done
+
+ PWD=`pwd`
+ mkdir -p $c
+ FILENAME=gpu_drv_module_compiler_
+ cd $c
+ if $r ; then
+     FILENAME+="Release_${OS}_"
+ else
+     FILENAME+="Debug_${OS}_"
+ fi
+ FILENAME+="${ARCH}_GPGPU_COMPILER"
+ if $t ; then
+     echo "*** Getting the cudart from DVS ***"
+     FILENAME+="_cudart"
+ fi
+ FILEPATH+="${FILENAME}/SW_${c}.0_${FILENAME}.tgz"
+
+ echo "*** Downloading from $FILEPATH ***"
+ TMPFILE=`mktemp`
+ wget "$FILEPATH" -O $TMPFILE
+ #aria2c -x 8 "$FILEPATH" -o $TMPFILE --dir='\'
+ extract $TMPFILE
+ echo Everything looks sane.
+}
+
+alias p4sw='cd /home/rgajare/p4/sw'
+alias less='less -N'
+
+function vulcan-cuda {
+  rev=$1
+  if [[ -z $rev ]]; then
+    rev=tot
+  fi
+  set -x
+  vulcan --eris --install --target-revision==cl-$rev compiler_internal_base
+  echo This is what would be the output
+  echo $?
+  vulcan --install ]=cuda
+  set +x
+}
+
+function isolate_change {
+if [ -z /mnt/compilershare/compiler ]; then
+   sudo mount -t cifs -o username=rgajare //compilershare/binarydrop /mnt/compilershare
+fi
+for cl in /mnt/compilershare/compiler/gpu_drv_module_compiler/Linux_GPGPU_COMPILER/*; do
+    echo "using the build from ${cl}"
+    ${cl}/x86_64_Linux_release/bin/ptxas -arch=sm_35 -m64 -po stress-maxrregcount=24  "zgemm_largek.o.keep_dir/zgemm_largek.compute_35.ptx"  -o "zgemm_largek.o.keep_dir/zgemm_largek.compute_35.cubin"
+
+    if [ $? == 1 ]; then
+       echo Something broke!
+       break
+    fi
+done
+
+}
+
+############################################################
+## Perforce
+############################################################
+
+function install_p4 {
+ sudo su
+ touch  /etc/apt/sources.list.d/perforce.list && echo 'deb http://package.perforce.com/apt/ubuntu/ trusty release' >>  /etc/apt/sources.list.d/perforce.list
+ wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -
+ apt-get update && sudo apt-get install helix-p4d -y
+ exit
+}
+
+alias p4d="p4 describe"
+alias p4s="p4 sync"
+alias p4f="p4 filelog -L"
+alias p4top="p4 changes -t -m1 #have"
+alias mychanges='p4 changes -u rgajare -s pending'
+alias p4review='/home/rgajare/p4/sw/main/apps/p4review/p4review.pl'
+alias p4rmerge='/home/rgajare/p4/sw/main/apps/p4review/p4rmerge.pl'
+alias dvsbuild='~/p4/sw/automation/dvs/dvsbuild/dvsbuild.pl -web'
+alias p4revert='perl /home/rgajare/p4/sw/tools/scripts/p4revert.pl'
+
+function p4clean {
+ find . -type f | p4 -x - fstat 2>&1 > /dev/null | sed 's/ -.*$//' > /tmp/list
+ less /tmp/list
+ inquire "Do you want to continue deleting the files?"
+ if [[ $answer == "y" ]]; then
+   xargs rm < /tmp/list
+   #Remove the empty directories if any
+   find -depth -type d -empty -exec rmdir {} \;
+ fi
+ rm -rf /tmp/list
+}
+
+function client_log {
+  if [[ -n $1 ]];
+  then p4 filelog //sw_spec/client/$1
+  else echo "Usage: client_log <client-name>"
+  fi
+}
+
+alias vless='vim -u ~/.less.vim'
+
+function build_compiler {
+  usage() { echo "Usage: fast-cudart [-c <cl-number>] -r" 1>&2; }
+  PDIR=`pwd`
+  clc=""
+  unset COMPILER_DIR
+  re=false
+  while true; do
+    case $1 in
+      -h|--help)
+        usage
+        return
+        ;;
+      -r|--release)
+        re=true
+        shift
+        ;;
+      -c|--changelist)
+        clc=$2
+        shift 2
+        ;;
+      *)
+        shift
+        break
+        ;;
+    esac
+  done
+  if [[ $clc ]]; then
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/common/build/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/common/cop/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/common/dwarf/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/common/inc/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/common/nvi/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/common/src/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/compiler/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/drivers/gpgpu/cuda/common/...@$clc
+  p4 sync  //sw/dev/gpu_drv/module_compiler/sdk/nvidia/inc/...@$clc
+  p4 sync  //sw/compiler/gpgpu/nvvm/...@$clc
+  echo Synced workspace to chnagelist $clc
+  else p4 sync
+  fi
+  sudo rm -rf $P4ROOT/sw/gpgpu/bin/*
+  sudo rm -rf $P4ROOT/sw/gpgpu/built/*
+  sudo rm -rf $P4ROOT/sw/gpgpu/depends/*
+  cd $P4ROOT/sw/dev/gpu_drv/module_compiler/drivers/compiler
+  if $re; then
+      echo Release build...
+      ./build/make-4.00 RELEASE=1 clean
+      ./build/make-4.00 -O nvvm_install RELEASE=1 PARALLEL_NVVM_BUILD=`grep processor /proc/cpuinfo | wc -l` GPGPU_COMPILER_EXPORT_DIR=$P4ROOT/sw/gpgpu/bin NV_TOOLS=$P4ROOT/sw/tools > build_nvvm.log 2>&1
+      ./build/make-4.00 -O tools_install RELEASE=1 PARALLEL_NVVM_BUILD=`grep processor /proc/cpuinfo | wc -l` GPGPU_COMPILER_EXPORT_DIR=$P4ROOT/sw/gpgpu/bin > build_tools 2>&1
+  else
+      echo Debug build...
+      ./build/make-4.00 clean
+      ./build/make-4.00 -O nvvm_install PARALLEL_NVVM_BUILD=`grep processor /proc/cpuinfo | wc -l` GPGPU_COMPILER_EXPORT_DIR=$P4ROOT/sw/gpgpu/bin NV_TOOLS=$P4ROOT/sw/tools > build_nvvm.log 2>&1
+      ./build/make-4.00 -O tools_install PARALLEL_NVVM_BUILD=`grep processor /proc/cpuinfo | wc -l` GPGPU_COMPILER_EXPORT_DIR=$P4ROOT/sw/gpgpu/bin > build_tools 2>&1
+  fi
+  sudo chown -R rgajare:rgajare $P4ROOT/sw/gpgpu/bin
+  if [[ $clc ]]; then
+     echo Exporting the compiler to ~/compiler/${clc}
+     mkdir -p ~/compiler/$clc
+     cp -R ~/p4/sw/gpgpu/bin/* ~/compiler/$clc
+  fi
+  cd $PDIR
+}
+
+function build_cudart {
+  usage() { echo "Usage: fast-cudart [-c <cl-number>] -r" 1>&2; }
+  cl=""
+  unset COMPILER_DIR
+  r=false
+  ARCH_OS_MO=x86_64_Linux_debug/
+  while true; do
+    case $1 in
+      -h|--help)
+        usage
+        return
+        ;;
+      -r|--release)
+        r=true
+        ARCH_OS_MO=x86_64_Linux_release/
+        shift
+        ;;
+      -c|--changelist)
+        cl=$2
+        shift 2
+        ;;
+      *)
+        shift
+        break
+        ;;
+    esac
+  done
+  if [ -d /mnt/compilershare/compiler ]; then
+      OLD_PATH=$PATH
+      WORK_DIR=~/compiler
+      export TEST_ROOT=$P4ROOT/sw/gpgpu
+      export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
+      if [[ ! -d ~/compiler/${cl} || ! -e ~/compiler/${cl}/libcudart.so ]]; then
+          export COMPILER_DIR=`readlink -e ~/compiler/${cl}/${ARCH_OS_MO}`
+          echo $COMPILER_DIR
+          if [[ -z $COMPILER_DIR ]]; then
+              export COMPILER_DIR=`readlink -e /mnt/compilershare/compiler/gpu_drv_module_compiler/Linux_GPGPU_COMPILER/${cl}/${ARCH_OS_MO}`
+          fi
+          if [[ -z $COMPILER_DIR ]]; then
+              echo "No compiler found in binarydrop... Getting it from DVS!"
+              cd ~/compiler
+              if $r;
+              then `dvs-compiler -c ${cl} -r`
+              else `dvs-compiler -c ${cl}`
+              fi
+              export COMPILER_DIR=${WORK_DIR}/${cl}/${ARCH_OS_MO}
+          fi
+          echo Getting the compiler from ${COMPILER_DIR}
+          export LD_LIBRARY_PATH=${TEST_ROOT}/bin/${ARCH_OS_MO}
+          export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+          export PATH=$PATH:$COMPILER_DIR/bin
+          export PATH=$PATH:$COMPILER_DIR/nvvm/bin
+          export PATH=$P4ROOT/sw/tools/unix/hosts/Linux-x86/doxygen-1.5.8:$PATH
+          echo "Compiling CUDA runtime & Library tools for ${cl} ..."
+	  p4 sync //sw/gpgpu/cuda/...@${cl}
+	  p4 sync //sw/gpgpu/build/...@${cl}
+	  p4 sync //sw/gpgpu/cudalibTesting/...@${cl}
+	  p4 sync //sw/gpgpu/*.mk@${cl}
+	  p4 sync //sw/gpgpu/Makefile@${cl}
+	  p4 sync //sw/gpgpu/cudalibtools/...@${cl}
+          cd ${TEST_ROOT}
+          rm -rf bin/$ARCH_OS_MO built depends
+          if $r; then
+              ./build/make-4.00 RELEASE=1 cuda -j12 GPGPU_COMPILER_EXPORT=$COMPILER_DIR > build_cuda.log 2>&1
+              ./build/make-4.00 RELEASE=1 cudalibtools -j12 GPGPU_COMPILER_EXPORT=$COMPILER_DIR > /dev/null 2>&1
+          else
+            ./build/make-4.00 cuda -j12 GPGPU_COMPILER_EXPORT=$COMPILER_DIR > build_cuda.log 2>&1
+            ./build/make-4.00 cudalibtools -j12 GPGPU_COMPILER_EXPORT=$COMPILER_DIR > /dev/null 2>&1
+          fi
+          cd ${TEST_ROOT}/bin/${ARCH_OS_MO}
+          if [[ -e libcudart.so && -e libcudadevrt.a ]]; then
+              echo Exporting the compiler to /home/rgajare/compiler/${cl}
+              #cp -R ${TEST_ROOT}/bin/${ARCH_OS_MO} ${TEST_ROOT}/build_cuda.log /home/rgajare/compiler/${cl}
+              echo Everything looks sane.
+              echo "Don't forget to add it in path - conditionally_prefix_path /home/rgajare/compiler/${cl}"
+          else
+            echo Compilation errors. Please check logs...
+          fi
+          export PATH=$OLD_PATH
+          export LD_LIBRARY_PATH=
+      else
+        echo Runtime already built in ~/compiler/${cl}
+        echo "use rm -rf ~/p4/sw/gpgpu/bin && mkdir -p ~/p4/sw/gpgpu/bin/${ARCH_OS_MO} && cp -R  ~/p4/sw/gpgpu/bin/ ~/p4/sw/gpgpu/bin/${ARCH_OS_MO}"
+      fi
+      unset DRIVER_ROOT
+      unset TEST_ROOT
+      unset ARCH_OS_MO
+      unset WORK_DIR
+  else
+    mkdir -p /mnt/compilershare
+    sudo mount -t cifs -o username=rgajare //compilershare/binarydrop /mnt/compilershare
+    echo "Unable to mount compilershare. Try again!"
+  fi
+}
+
+
+function findinitiator {
+  cd "/home/rgajare/p4/sw/automation/DVS 2.0/Build System/Build Initiators"
+  /usr/bin/tree -f | grep -ie $1
+}
+
+function wgeta {
+  wget --user=rgajare --password=Winters@2 $1 -O $2
+}
+
+
+function install_driver {
+  usage() { echo "Usage: install-driver [-c <cl-number>] -r" 1>&2; }
+  cl=""
+  unset COMPILER_DIR
+  r=false
+  ARCH_OS_MO=x86_64_Linux_debug/
+  while true; do
+    case $1 in
+      -h|--help)
+        usage
+        return
+        ;;
+      -r|--release)
+        r=true
+        ARCH_OS_MO=x86_64_Linux_release/
+        shift
+        ;;
+      -c|--changelist)
+        cl=$2
+        shift 2
+        ;;
+      *)
+        shift
+        break
+        ;;
+    esac
+  done
+  if [ -d /mnt/compilershare/compiler ]; then
+    OLD_PATH=$PATH
+    WORK_DIR=~/compiler
+    export TEST_ROOT=$P4ROOT/sw/gpgpu
+    export DRIVER_ROOT=$P4ROOT/sw/dev/gpu_drv/module_compiler
+  fi
+}
+
+alias modena='cd $P4ROOT/sw/compiler/test/gpgpu/modena14/ported/modena_scripts'
+alias supertest='cd $P4ROOT/sw/compiler/test/gpgpu/SuperTest'
+alias perennial='cd /home/rgajare/p4/sw/compiler/test/gpgpu/perennial/ported/perennial/CCVS/testsrc'
