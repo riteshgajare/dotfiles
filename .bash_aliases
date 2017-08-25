@@ -43,10 +43,10 @@ else
   # For LS_COLORS template: $ dircolors /etc/DIR_COLORS
 fi
 
-alias l="ls -alt"
+alias l="ls -rlt"
 alias ll="ls -lh"
 alias la="ls -a"
-alias lal="ls -alh"
+alias lal="ls -rlh"
 
 ############################################################
 ## Git
