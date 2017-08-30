@@ -1,6 +1,50 @@
+##########################################################
+# Perforce
+##########################################################
+
 function p4dc {
-   p4 opened -c $1 | awk 'BEGIN { FS = "#" } // { print "p4 diff " $1 }' | csh | less
+   p4 opened -c $1 | awk 'BEGIN { FS = "#" } // { print "p4 diff " $1 }' | csh | colordiff | less
 }
+alias p4d="p4 describe"
+alias p4s="p4 sync"
+alias p4f="p4 filelog -L"
+alias p4top="p4 changes -t -m1 #have"
+alias mychanges='p4 changes -u rgajare -s pending'
+alias p4review='/home/rgajare/p4/sw/main/apps/p4review/p4review.pl'
+alias p4rmerge='/home/rgajare/p4/sw/main/apps/p4review/p4rmerge.pl'
+alias dvsbuild='~/p4/sw/automation/dvs/dvsbuild/dvsbuild.pl -web'
+alias p4revert='perl /home/rgajare/p4/sw/tools/scripts/p4revert.pl'
+
+function p4clean {
+ find . -type f | p4 -x - fstat 2>&1 > /dev/null | sed 's/ -.*$//' > /tmp/list
+ less /tmp/list
+ inquire "Do you want to continue deleting the files?"
+ if [[ $answer == "y" ]]; then
+   xargs rm < /tmp/list
+   #Remove the empty directories if any
+   find -depth -type d -empty -exec rmdir {} \;
+ fi
+ rm -rf /tmp/list
+}
+
+function client_log {
+  if [[ -n $1 ]];
+  then p4 filelog //sw_spec/client/$1
+  else echo "Usage: client_log <client-name>"
+  fi
+}
+
+function install_p4 {
+ sudo su
+ touch  /etc/apt/sources.list.d/perforce.list && echo 'deb http://package.perforce.com/apt/ubuntu/ trusty release' >>  /etc/apt/sources.list.d/perforce.list
+ wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -
+ apt-get update && sudo apt-get install helix-p4d -y
+ exit
+}
+
+##########################################################
+# DVS and other tools for quick fixes
+#########################################################
 
 function dvs-compiler {
 
@@ -98,46 +142,6 @@ done
 
 }
 
-############################################################
-## Perforce
-############################################################
-
-function install_p4 {
- sudo su
- touch  /etc/apt/sources.list.d/perforce.list && echo 'deb http://package.perforce.com/apt/ubuntu/ trusty release' >>  /etc/apt/sources.list.d/perforce.list
- wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -
- apt-get update && sudo apt-get install helix-p4d -y
- exit
-}
-
-alias p4d="p4 describe"
-alias p4s="p4 sync"
-alias p4f="p4 filelog -L"
-alias p4top="p4 changes -t -m1 #have"
-alias mychanges='p4 changes -u rgajare -s pending'
-alias p4review='/home/rgajare/p4/sw/main/apps/p4review/p4review.pl'
-alias p4rmerge='/home/rgajare/p4/sw/main/apps/p4review/p4rmerge.pl'
-alias dvsbuild='~/p4/sw/automation/dvs/dvsbuild/dvsbuild.pl -web'
-alias p4revert='perl /home/rgajare/p4/sw/tools/scripts/p4revert.pl'
-
-function p4clean {
- find . -type f | p4 -x - fstat 2>&1 > /dev/null | sed 's/ -.*$//' > /tmp/list
- less /tmp/list
- inquire "Do you want to continue deleting the files?"
- if [[ $answer == "y" ]]; then
-   xargs rm < /tmp/list
-   #Remove the empty directories if any
-   find -depth -type d -empty -exec rmdir {} \;
- fi
- rm -rf /tmp/list
-}
-
-function client_log {
-  if [[ -n $1 ]];
-  then p4 filelog //sw_spec/client/$1
-  else echo "Usage: client_log <client-name>"
-  fi
-}
 
 alias vless='vim -u ~/.less.vim'
 
@@ -206,6 +210,7 @@ function build_compiler {
 }
 
 function build_cudart {
+  set -x	 
   usage() { echo "Usage: fast-cudart [-c <cl-number>] -r" 1>&2; }
   cl=""
   unset COMPILER_DIR
@@ -298,6 +303,7 @@ function build_cudart {
     sudo mount -t cifs -o username=rgajare //compilershare/binarydrop /mnt/compilershare
     echo "Unable to mount compilershare. Try again!"
   fi
+  set +x
 }
 
 

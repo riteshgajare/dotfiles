@@ -43,7 +43,7 @@ else
   # For LS_COLORS template: $ dircolors /etc/DIR_COLORS
 fi
 
-alias l="ls -rlt"
+alias l="ls -arlt"
 alias ll="ls -lh"
 alias la="ls -a"
 alias lal="ls -rlh"
