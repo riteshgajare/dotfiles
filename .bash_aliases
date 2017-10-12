@@ -307,10 +307,10 @@ function extract {
 }
 
 alias rebash='. $HOME/.bashrc'
-alias tree='tree | less'
+alias tree='`which tree` | less'
 
 function findfile {
-  /usr/bin/tree -f | grep -ie $1
+ `which tree` -f | grep -ie $1
 }
 
 function inquire ()  {
