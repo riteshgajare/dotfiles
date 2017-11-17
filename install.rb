@@ -13,4 +13,8 @@ Dir['.*'].each do |file|
   target = File.join(home, "#{file}")
   `ln -nsf #{File.expand_path file} #{target}`
 end
-
+`mkdir -p #{home}/bin`
+Dir['bin/*'].each do |file|
+  target = File.join(home, "#{file}")
+  `ln -nsf #{File.expand_path file} #{target}`
+end
