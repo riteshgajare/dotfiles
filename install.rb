@@ -18,3 +18,4 @@ Dir['bin/*'].each do |file|
   target = File.join(home, "#{file}")
   `ln -nsf #{File.expand_path file} #{target}`
 end
+`. ~/.bashrc`
