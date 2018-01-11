@@ -5,7 +5,11 @@
 function p4dc {
    p4 opened -c $1 | awk 'BEGIN { FS = "#" } // { print "p4 diff " $1 }' | csh | colordiff | less
 }
-alias p4d="p4 describe"
+
+function p4d {
+   p4 describe $* | colordiff
+}
+
 alias p4s="p4 sync"
 alias p4f="p4 filelog -L"
 alias p4top="p4 changes -t -m1 #have"
@@ -210,7 +214,7 @@ function build_compiler {
 }
 
 function build_cudart {
-  set -x	 
+  set -x
   usage() { echo "Usage: fast-cudart [-c <cl-number>] -r" 1>&2; }
   cl=""
   unset COMPILER_DIR
@@ -264,12 +268,12 @@ function build_cudart {
           export PATH=$PATH:$COMPILER_DIR/nvvm/bin
           export PATH=$P4ROOT/sw/tools/unix/hosts/Linux-x86/doxygen-1.5.8:$PATH
           echo "Compiling CUDA runtime & Library tools for ${cl} ..."
-	  p4 sync //sw/gpgpu/cuda/...@${cl}
-	  p4 sync //sw/gpgpu/build/...@${cl}
-	  p4 sync //sw/gpgpu/cudalibTesting/...@${cl}
-	  p4 sync //sw/gpgpu/*.mk@${cl}
-	  p4 sync //sw/gpgpu/Makefile@${cl}
-	  p4 sync //sw/gpgpu/cudalibtools/...@${cl}
+          p4 sync //sw/gpgpu/cuda/...@${cl}
+          p4 sync //sw/gpgpu/build/...@${cl}
+          p4 sync //sw/gpgpu/cudalibTesting/...@${cl}
+          p4 sync //sw/gpgpu/*.mk@${cl}
+          p4 sync //sw/gpgpu/Makefile@${cl}
+          p4 sync //sw/gpgpu/cudalibtools/...@${cl}
           cd ${TEST_ROOT}
           rm -rf bin/$ARCH_OS_MO built depends
           if $r; then
@@ -313,7 +317,7 @@ function findinitiator {
 }
 
 function wgeta {
-  wget --user=rgajare --password=Winters@2 $1 -O $2
+  wget --user=rgajare --password=Winters@3 $1 -O $2
 }
 
 

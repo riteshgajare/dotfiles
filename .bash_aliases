@@ -235,6 +235,13 @@ alias link_emacs_head='ln -snf /usr/local/Cellar/emacs/HEAD/bin/emacs /usr/local
 alias upgrade_emacs='brew uninstall emacs && install_emacs && link_emacs'
 alias upgrade_emacs_head='brew uninstall emacs && install_emacs_head && link_emacs_head'
 
+function ediff {
+  file1=$1
+  file2=$2
+  emacs -Q --eval "(ediff-files \"$file1\" \"$file2\")"
+}
+
+
 ############################################################
 ## Miscellaneous
 ############################################################
@@ -296,7 +303,6 @@ alias p4-history="perl /home/rgajare/scripts/client_log.pl"
 
 function extract {
  tar xvf $1
- echo Extracting the compiler
  echo Please wait...
  rm -rf $1
  for f in *.tar *.bz2 *.tgz
@@ -308,6 +314,11 @@ function extract {
 
 alias rebash='. $HOME/.bashrc'
 alias tree='`which tree` | less'
+
+function add2bin () {
+ full_path=`readlink -f $1`
+ ln -sn $full_path ~/bin/$1
+}
 
 function findfile {
  `which tree` -f | grep -ie $1
