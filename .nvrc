@@ -316,8 +316,14 @@ function findinitiator {
   /usr/bin/tree -f | grep -ie $1
 }
 
+function findbuild {
+  cd "/home/rgajare/p4/sw/automation/DVS 2.0/Build System/Classes"
+  /usr/bin/tree -f | grep -ie $1
+}
+
+
 function wgeta {
-  wget --user=rgajare --password=Winters@3 $1 -O $2
+  wget --no-check-certificate --user=rgajare --password=Winters@4 $1 -O $2
 }
 
 

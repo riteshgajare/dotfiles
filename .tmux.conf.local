@@ -275,3 +275,23 @@ bind -n M-Left select-pane -L
 bind -n M-Right select-pane -R
 bind -n M-Up select-pane -U
 bind -n M-Down select-pane -D
+
+if "test ! -d ~/.tmux/plugins/tpm" \
+   "run 'git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux/plugins/tpm/bin/install_plugins'"
+
+set -g @tpm_plugins '            \
+    tmux-plugins/tpm             \
+    tmux-plugins/tmux-sensible   \
+    tmux-plugins/tmux-resurrect  \
+    tmux-plugins/tmux-net-speed  \
+    tmux-plugins/tmux-sidebar    \
+    '
+
+# set -g @continuum-restore 'off'
+set -g @resurrect-capture-pane-contents 'on'
+# Shell history for individual panes will now be saved and restored.
+set -g @resurrect-save-shell-history 'on'
+set -g @net_speed_interfaces "eth0"
+set -g @sidebar-tree-command 'tree -C'
+# Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
+run '~/.tmux/plugins/tpm/tpm'

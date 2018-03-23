@@ -155,11 +155,6 @@ alias showdeskicons="defaults write com.apple.finder CreateDesktop -bool true &&
 alias hidedeskicons="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
 
 ############################################################
-## Middleman
-############################################################
-alias m="be middleman"
-
-############################################################
 ## Heroku
 ############################################################
 
@@ -294,6 +289,22 @@ function fakefile {
 }
 
 ############################################################
+# Docker Utilites
+############################################################
+
+function dc_trace_cmd() {
+  local parent=`docker inspect -f '{{ .Parent }}' $1` 2>/dev/null
+  declare -i level=$2
+  echo ${level}: `docker inspect -f '{{ .ContainerConfig.Cmd }}' $1 2>/dev/null`
+  level=level+1
+  if [ "${parent}" != "" ]; then
+    echo ${level}: $parent 
+    dc_trace_cmd $parent $level
+  fi
+}
+
+
+############################################################
 # Utility functions
 ############################################################
 
@@ -345,3 +356,5 @@ function inquire ()  {
     fi
   done
 }
+alias whichpython='sudo update-alternatives --config python'
+alias mgrep='grep -Irine'
