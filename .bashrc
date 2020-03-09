@@ -6,18 +6,20 @@ if [ -e /etc/bashrc ] ; then
   . /etc/bashrc
 fi
 
-export P4ROOT=$(p4 client -o | grep '^Root:' | awk -F ' ' '{print $NF}')
-export P4PORT=p4sw:2006
-export P4USER=rgajare
-export TOOLSDIR=$P4ROOT/sw/tools
-export NV_TOOLS=$P4ROOT/sw/tools
-export VERBOSE=1
+# export P4ROOT=$(p4 client -o | grep '^Root:' | awk -F ' ' '{print $NF}')
+# export P4PORT=p4sw:2006
+# export P4USER=rgajare
+# export TOOLSDIR=$P4ROOT/sw/tools
+# export NV_TOOLS=$P4ROOT/sw/tools
+# export VERBOSE=1
 # export LD_LIBRARY_PATH=$P4ROOT/sw/gpgpu/bin/x86_64_Linux_release:$LD_LIBRARY_PATH
-export VVS_P4CLIENT=rgajare-dev
-export VVS_P4SERVER=p4sw:2006
+# export VVS_P4CLIENT=rgajare-dev
+# export VVS_P4SERVER=p4sw:2006
 # Needed for CUFFT
-export LM_LICENSE_FILE=$P4ROOT/sw/gpgpu/cudalibTesting/license/cuda.lic
-export VULCAN_CONFIG=.vcnf
+# export LM_LICENSE_FILE=$P4ROOT/sw/gpgpu/cudalibTesting/license/cuda.lic
+# export VULCAN_CONFIG=.vcnf
+export WORKON_HOME=~/Envs
+source /usr/local/bin/virtualenvwrapper.sh
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
@@ -44,10 +46,6 @@ conditionally_prefix_path $P4ROOT/sw/misc/linux
 conditionally_prefix_path $P4ROOT/sw/eris/bin
 conditionally_prefix_path /home/rgajare/llvm/install/bin
 conditionally_prefix_path $P4ROOT/tools/VRL
-
-if [ `which rbenv 2> /dev/null` ]; then
-  eval "$(rbenv init -)"
-fi
 
 ############################################################
 ## MANPATH
@@ -107,81 +105,6 @@ export RBXOPT=-X19
 
 ############################################################
 ## Terminal behavior
-############################################################
-
-# Change the window title of X terminals
-case $TERM in
-  xterm*|rxvt|Eterm|eterm)
-    PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME%%.*}:${PWD/$HOME/~}\007"'
-    ;;
-  screen)
-    PROMPT_COMMAND='echo -ne "\033_${USER}@${HOSTNAME%%.*}:${PWD/$HOME/~}\033\\"'
-    ;;
-esac
-
-# Show the git branch and dirty state in the prompt.
-function parse_git_dirty {
-  [[ -n $(git status -s 2> /dev/null) ]] && echo "*"
-}
-function parse_git_branch {
-  git rev-parse --abbrev-ref HEAD 2> /dev/null
-}
-
-if [ `which git 2> /dev/null` ]; then
-  function git_prompt {
-    echo $(parse_git_branch)$(parse_git_dirty)
-  }
-else
-  function git_prompt {
-    echo ""
-  }
-fi
-
-if [ `which rbenv 2> /dev/null` ]; then
-  function ruby_prompt {
-    echo $(rbenv version-name)
-  }
-elif [ `which ruby 2> /dev/null` ]; then
-  function ruby_prompt {
-    echo $(ruby --version | cut -d' ' -f2)
-  }
-else
-  function ruby_prompt {
-    echo ""
-  }
-fi
-
-if [ `which rbenv-gemset 2> /dev/null` ]; then
-  function gemset_prompt {
-    local gemset=$(rbenv gemset active 2> /dev/null)
-    if [ $gemset ]; then
-      echo " ${gemset}"
-    fi
-  }
-else
-  function gemset_prompt {
-    echo ""
-  }
-fi
-
-function total_filesize {
-  for filesize in $(ls -l . | grep "^-" | awk '{print $5}')
-  do
-    let totalsize=$totalsize+$filesize
-  done
-  if [[ $totalsize -eq "" ]]; then
-    echo ""
-  else
-    echo -n "$totalsize bytes"
-  fi
-}
-
- if [ -n "$BASH" ]; then
-    export PS1='\[\033[32m\]\n[\s: \w] $(total_filesize) $(git_prompt)\n\[\033[31m\][\u@\h]\$ \[\033[00m\]'
-  fi
-
-############################################################
-## Optional shell behavior
 ############################################################
 
 shopt -s cdspell
@@ -252,190 +175,6 @@ fi
 # # export RUBY_FREE_MIN=200000 # Ruby <= 2.0
 # export RUBY_GC_HEAP_FREE_SLOTS=200000 # Ruby >= 2.1
 
-############################################################
-## CLang and LLVM
-############################################################
-
-function install_llvm {
-
-  WGET=wget
-  CURRENT_DIR=`pwd`
-  INSTALL_DIR=`pwd`/install
-
-  PYTHON=python27
-  CLASS=566
-  VERSION="3.8.1"
-  TARGET=
-  RTTI="REQUIRES_RTTI=1"
-
-  # select file extension based on version
-
-  CLANG_SRC=""
-  LLVM_SRC=""
-  RT_SRC=""
-  LIBCXX_SRC=""
-  LIBCXXABI_SRC=""
-  LLDB_SRC=""
-  LLD_SRC=""
-  POLLY_SRC=""
-  OPENMP_SRC=""
-  CLANG_TOOLS_SRC=""
-  TEST_SUITE_SRC=""
-
-  SUFFIX=".tar.gz"
-
-  RTVERSION=$VERSION
-
-  if [ "$VERSION" == "3.4.2" ]; then
-      RTVERSION="3.4"
-      SUFFIX = ".tar.gz"
-      CLANG_SRC="cfe-$VERSION.src"
-      LLVM_SRC="llvm-$VERSION.src"
-      RT_SRC="compiler-rt-3.4.src"
-      LIBCXX_SRC="libcxx-$VERSION.src"
-      LLDB_SRC="lldb-3.4.src"
-      POLLY_SRC="polly-3.4.src"
-      CLANG_TOOLS_SRC="clang-tools-extra-3.4.src"
-      TEST_SUITE_SRC="test-suite-3.4.src"
-  else
-    SUFFIX=".tar.xz"
-    CLANG_SRC="cfe-$VERSION.src"
-    LLVM_SRC="llvm-$VERSION.src"
-    RT_SRC="compiler-rt-$VERSION.src"
-    LIBCXX_SRC="libcxx-$VERSION.src"
-    LIBCXXABI_SRC="libcxxabi-$VERSION.src"
-    LLDB_SRC="lldb-$VERSION.src"
-    LLD_SRC="lldb-$VERSION.src"
-    POLLY_SRC="polly-$VERSION.src"
-    OPENMP_SRC="openmp-$VERSION.src"
-    CLANG_TOOLS_SRC="clang-tools-extra-$VERSION.src"
-    TEST_SUITE_SRC="test-suite-$VERSION.src"
-  fi
-
-
-  if [ "$(uname)" == "Darwin" ]; then
-      WGET='curl -O '
-      TARGET='--target=x86_64'
-  fi
-
-  if [ -d $LLVM_SRC ]; then
-      echo Found $LLVM_SRC! Not downloading source again.
-  else
-    $WGET http://www.llvm.org/releases/$VERSION/$LLVM_SRC$SUFFIX
-    tar xf $LLVM_SRC$SUFFIX
-  fi
-
-  if [ -d $LLVM_SRC ]; then
-      echo Everything looks sane.
-  else
-    echo Install had problems. Quitting.
-    exit
-  fi
-
-  if [ -d $CURRENT_DIR/$LLVM_SRC/tools ]; then
-      cd $CURRENT_DIR/$LLVM_SRC/tools
-  else
-    echo Fail! Something is wrong with your $LLVM_SRC checkout!
-    exit 1
-  fi
-
-  if [ -d clang ]; then
-      echo Found clang! Not downloading clang again.
-  else
-    $WGET http://www.llvm.org/releases/$VERSION/$CLANG_SRC$SUFFIX
-    tar xf $CLANG_SRC$SUFFIX
-    mv $CLANG_SRC clang
-    if [ -d clang ]; then
-        echo Everything looks sane.
-    else
-      echo Install had problems. Quitting.
-      exit
-    fi
-  fi
-
-  cd $CURRENT_DIR
-
-  if [ -d $CURRENT_DIR/$LLVM_SRC/projects ]; then
-      cd $CURRENT_DIR/$LLVM_SRC/projects
-  else
-    echo Fail! Something is wrong wint $LLVM_SRC.
-    exit 1
-  fi
-
-  if [ -d compiler-rt ]; then
-      echo Found compiler-rt! Not downloading compiler-rt again.
-  else
-    $WGET http://www.llvm.org/releases/$RTVERSION/$RT_SRC$SUFFIX
-    tar xf $RT_SRC$SUFFIX
-    mv $RT_SRC compiler-rt
-    if [ -d compiler-rt ]; then
-        echo Everything looks sane.
-    else
-      echo Install had problems. Quitting.
-      exit
-    fi
-  fi
-
-  #if [ -d libcxx ]; then
-  #    echo Found libcxx! Not downloading libcxx again.
-  #else
-  #$WGET http://www.llvm.org/releases/$VERSION/$LIBCXX_SRC$SUFFIX
-  #tar xf $LIBCXX_SRC$SUFFIX
-  #mv $LIBCXX_SRC libcxx
-  #if [ -d libcxx ]; then
-  #echo Everything looks sane.
-  #else
-  #echo Install had problems. Quitting.
-  #exit
-  #    fi
-  #fi
-
-  #if [ $LIBCXXABI_SRC != "" ]; then
-  #    if [ -d libcxxabi ]; then#
-  #echo Found libcxxabi! Not downloading libcxx again.
-  #    else
-  #$WGET http://www.llvm.org/releases/$VERSION/$LIBCXXABI_SRC$SUFFIX
-  #tar xf $LIBCXXABI_SRC$SUFFIX
-  #mv $LIBCXXABI_SRC libcxxabi
-  #if [ -d libcxxabi ]; then
-  #    echo Everything looks sane.
-  #else
-  #    echo Install had problems. Quitting.
-  #    exit
-  #fi
-  #    fi
-  #fi
-
-  BUILD_DIR=$CURRENT_DIR/$LLVM_SRC/build
-
-  if [ -d $BUILD_DIR ]; then
-      cd $BUILD_DIR
-      echo Found $BUILD_DIR.  Remove to reconfigure LLVM and Clang.
-      make
-  else
-    mkdir -p $BUILD_DIR
-    mkdir -p $INSTALL_DIR
-    cd $BUILD_DIR
-    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR  ..
-    cmake --build .
-    #make cxx
-    #make check-libcxx
-    cmake --build . --target install
-  fi
-
-  if [ -x $INSTALL_DIR/bin/clang ]; then
-      true
-  else
-    echo LLVM not installed properly.
-    exit 0
-  fi
-
-  cd $CURRENT_DIR
-  echo "Remember to add $INSTALL_DIR/bin to your PATH variable."
-  export PATH="$INSTALL_DIR/bin:$PATH"
-}
-
-
 export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
 export LESS=' -R '
 
@@ -453,3 +192,4 @@ if [ -e ~/.nvrc ]; then
   . ~/.nvrc
 fi
 
+## eval "$(register-python-argcomplete ngc)"
